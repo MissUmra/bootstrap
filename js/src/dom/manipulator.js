@@ -1,7 +1,7 @@
 /**
  * --------------------------------------------------------------------------
- * Bootstrap (v4.3.1): dom/manipulator.js
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ * Bootstrap (v5.1.3): dom/manipulator.js
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  * --------------------------------------------------------------------------
  */
 
@@ -26,16 +26,16 @@ function normalizeData(val) {
 }
 
 function normalizeDataKey(key) {
-  return key.replace(/[A-Z]/g, chr => chr.toLowerCase())
+  return key.replace(/[A-Z]/g, chr => `-${chr.toLowerCase()}`)
 }
 
 const Manipulator = {
   setDataAttribute(element, key, value) {
-    element.setAttribute(`data-${normalizeDataKey(key)}`, value)
+    element.setAttribute(`data-bs-${normalizeDataKey(key)}`, value)
   },
 
   removeDataAttribute(element, key) {
-    element.removeAttribute(`data-${normalizeDataKey(key)}`)
+    element.removeAttribute(`data-bs-${normalizeDataKey(key)}`)
   },
 
   getDataAttributes(element) {
@@ -43,27 +43,28 @@ const Manipulator = {
       return {}
     }
 
-    const attributes = {
-      ...element.dataset
-    }
+    const attributes = {}
+    const bsKeys = Object.keys(element.dataset).filter(key => key.startsWith('bs'))
 
-    Object.keys(attributes).forEach(key => {
-      attributes[key] = normalizeData(attributes[key])
-    })
+    for (const key of bsKeys) {
+      let pureKey = key.replace(/^bs/, '')
+      pureKey = pureKey.charAt(0).toLowerCase() + pureKey.slice(1, pureKey.length)
+      attributes[pureKey] = normalizeData(element.dataset[key])
+    }
 
     return attributes
   },
 
   getDataAttribute(element, key) {
-    return normalizeData(element.getAttribute(`data-${normalizeDataKey(key)}`))
+    return normalizeData(element.getAttribute(`data-bs-${normalizeDataKey(key)}`))
   },
 
   offset(element) {
     const rect = element.getBoundingClientRect()
 
     return {
-      top: rect.top + document.body.scrollTop,
-      left: rect.left + document.body.scrollLeft
+      top: rect.top + window.pageYOffset,
+      left: rect.left + window.pageXOffset
     }
   },
 
@@ -71,18 +72,6 @@ const Manipulator = {
     return {
       top: element.offsetTop,
       left: element.offsetLeft
-    }
-  },
-
-  toggleClass(element, className) {
-    if (!element) {
-      return
-    }
-
-    if (element.classList.contains(className)) {
-      element.classList.remove(className)
-    } else {
-      element.classList.add(className)
     }
   }
 }

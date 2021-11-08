@@ -1,47 +1,37 @@
 /**
  * --------------------------------------------------------------------------
- * Bootstrap (v4.3.1): dom/selector-engine.js
- * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ * Bootstrap (v5.1.3): dom/selector-engine.js
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  * --------------------------------------------------------------------------
  */
 
-import { find as findFn, findOne, matches, closest } from './polyfill'
-import { makeArray } from '../util/index'
+import { isDisabled, isVisible } from '../util/index'
 
 /**
- * ------------------------------------------------------------------------
  * Constants
- * ------------------------------------------------------------------------
  */
 
 const NODE_TEXT = 3
 
 const SelectorEngine = {
-  matches(element, selector) {
-    return matches.call(element, selector)
-  },
-
   find(selector, element = document.documentElement) {
-    return findFn.call(element, selector)
+    return [].concat(...Element.prototype.querySelectorAll.call(element, selector))
   },
 
   findOne(selector, element = document.documentElement) {
-    return findOne.call(element, selector)
+    return Element.prototype.querySelector.call(element, selector)
   },
 
   children(element, selector) {
-    const children = makeArray(element.children)
-
-    return children.filter(child => this.matches(child, selector))
+    return [].concat(...element.children).filter(child => child.matches(selector))
   },
 
   parents(element, selector) {
     const parents = []
-
     let ancestor = element.parentNode
 
     while (ancestor && ancestor.nodeType === Node.ELEMENT_NODE && ancestor.nodeType !== NODE_TEXT) {
-      if (this.matches(ancestor, selector)) {
+      if (ancestor.matches(selector)) {
         parents.push(ancestor)
       }
 
@@ -51,24 +41,47 @@ const SelectorEngine = {
     return parents
   },
 
-  closest(element, selector) {
-    return closest.call(element, selector)
-  },
-
   prev(element, selector) {
-    const siblings = []
+    let previous = element.previousElementSibling
 
-    let previous = element.previousSibling
-
-    while (previous && previous.nodeType === Node.ELEMENT_NODE && previous.nodeType !== NODE_TEXT) {
-      if (this.matches(previous, selector)) {
-        siblings.push(previous)
+    while (previous) {
+      if (previous.matches(selector)) {
+        return [previous]
       }
 
-      previous = previous.previousSibling
+      previous = previous.previousElementSibling
     }
 
-    return siblings
+    return []
+  },
+
+  next(element, selector) {
+    let next = element.nextElementSibling
+
+    while (next) {
+      if (next.matches(selector)) {
+        return [next]
+      }
+
+      next = next.nextElementSibling
+    }
+
+    return []
+  },
+
+  focusableChildren(element) {
+    const focusables = [
+      'a',
+      'button',
+      'input',
+      'textarea',
+      'select',
+      'details',
+      '[tabindex]',
+      '[contenteditable="true"]'
+    ].map(selector => `${selector}:not([tabindex^="-"])`).join(', ')
+
+    return this.find(focusables, element).filter(el => !isDisabled(el) && isVisible(el))
   }
 }
 
